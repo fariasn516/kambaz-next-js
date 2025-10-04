@@ -1,23 +1,41 @@
+"use client";
 import Link from "next/link";
+
 export default function Signin() {
   return (
-    <div id="wd-signin-screen">
-      <h3>Sign in</h3>
-      <input placeholder="username" className="wd-username" /> <br />
+    <div
+      id="wd-signin-screen"
+      className="p-4 d-flex flex-column"
+      style={{ maxWidth: "300px" }}
+    >
+      <h3 className="mb-3">Sign in</h3>
+
       <input
-        placeholder="password"
+        type="text"
+        placeholder="username"
+        className="form-control mb-2"
+      />
+
+      <input
         type="password"
-        className="wd-password"
-      />{" "}
-      <br />
-      <Link id="wd-signin-btn" href="/Dashboard">
-        {" "}
-        Sign in{" "}
-      </Link>{" "}
-      <br />
-      <Link href="Signup" id="wd-signup-link">
-        {" "}
-        Sign up{" "}
+        placeholder="password"
+        className="form-control mb-3"
+      />
+
+      <Link
+        id="wd-signin-btn"
+        href="/Dashboard"
+        className="btn btn-primary w-100 mb-2 text-center"
+      >
+        Sign in
+      </Link>
+
+      <Link
+        href="/Account/Signup"
+        id="wd-signup-link"
+        className="text-primary text-decoration-none text-center"
+      >
+        Sign up
       </Link>
     </div>
   );

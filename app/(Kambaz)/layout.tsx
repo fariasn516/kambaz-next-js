@@ -1,22 +1,19 @@
 import { ReactNode } from "react";
 import KambazNavigation from "./Navigation";
+import "./styles.css";
+
 export default function KambazLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <table>
-      <tbody>
-        <tr>
-          <td valign="top" width="200">
-            {" "}
-            <KambazNavigation />{" "}
-          </td>
-          <td valign="top" width="100%">
-            {" "}
-            {children}{" "}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div className="d-flex">
+      <div className="position-fixed top-0 bottom-0 start-0">
+        <KambazNavigation />
+      </div>
+
+      <div className="flex-grow-1 p-3" style={{ marginLeft: "120px" }}>
+        {children}
+      </div>
+    </div>
   );
 }
