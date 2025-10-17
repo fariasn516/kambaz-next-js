@@ -1,27 +1,45 @@
 "use client";
+
+import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Form, Button, Row, Col } from "react-bootstrap";
+import * as db from "../../../../Database";
 
 export default function AssignmentEditor() {
+  const { cid, aid } = useParams();
+  const assignments = db.assignments || [];
+
+  const assignment = assignments.find((a: any) => a._id === aid);
+
+  if (!assignment) {
+    return (
+      <div className="p-4">
+        <h2>Assignment not found</h2>
+        <Link href={`/Courses/${cid}/Assignments`}>
+          <Button variant="secondary" className="mt-3">
+            Back to Assignments
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div id="wd-assignments-editor" className="p-4">
-      <h2 className="mb-4">Edit Assignment</h2>
+      <h2 className="mb-4">{assignment.title}</h2>
+
       <Form>
         <Form.Group className="mb-3" controlId="wd-name">
           <Form.Label>Assignment Name</Form.Label>
-          <Form.Control type="text" defaultValue="A1 - ENV + HTML" />
+          <Form.Control type="text" defaultValue={assignment.title} />
         </Form.Group>
 
         <Form.Group className="mb-4" controlId="wd-description">
           <Form.Label>Description</Form.Label>
           <Form.Control
             as="textarea"
-            rows={6}
-            defaultValue={`The assignment is available online. Submit a link to the landing page of your Web application running on Netlify. The landing page should include the following:
-- Your full name and section
-- Links to each of the lab assignments
-- Link to the Kanbas application
-- Links to all relevant source code repositories
-- Navigation back to the landing page.`}
+            rows={5}
+            defaultValue={`Edit the assignment details for ${assignment.title}.`}
           />
         </Form.Group>
 
@@ -32,21 +50,21 @@ export default function AssignmentEditor() {
 
         <Form.Group className="mb-3" controlId="wd-group">
           <Form.Label>Assignment Group</Form.Label>
-          <Form.Select>
+          <Form.Select defaultValue="ASSIGNMENTS">
             <option>ASSIGNMENTS</option>
           </Form.Select>
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="wd-display-grade-as">
           <Form.Label>Display Grade As</Form.Label>
-          <Form.Select>
+          <Form.Select defaultValue="Percentage">
             <option>Percentage</option>
           </Form.Select>
         </Form.Group>
 
         <Form.Group className="mb-3" controlId="wd-submission-type">
           <Form.Label>Submission Type</Form.Label>
-          <Form.Select>
+          <Form.Select defaultValue="Online">
             <option>Online</option>
           </Form.Select>
         </Form.Group>
@@ -54,33 +72,12 @@ export default function AssignmentEditor() {
         <Form.Group className="mb-4">
           <Form.Label>Online Entry Options</Form.Label>
           <div className="ms-2">
-            <Form.Check type="checkbox" label="Text Entry" id="wd-text-entry" />
-            <Form.Check
-              type="checkbox"
-              label="Website URL"
-              id="wd-website-url"
-            />
-            <Form.Check
-              type="checkbox"
-              label="Media Recordings"
-              id="wd-media-recordings"
-            />
-            <Form.Check
-              type="checkbox"
-              label="Student Annotation"
-              id="wd-student-annotation"
-            />
-            <Form.Check
-              type="checkbox"
-              label="File Uploads"
-              id="wd-file-upload"
-            />
+            <Form.Check type="checkbox" label="Text Entry" />
+            <Form.Check type="checkbox" label="Website URL" />
+            <Form.Check type="checkbox" label="Media Recordings" />
+            <Form.Check type="checkbox" label="Student Annotation" />
+            <Form.Check type="checkbox" label="File Uploads" />
           </div>
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="wd-assign-to">
-          <Form.Label>Assign to</Form.Label>
-          <Form.Control type="text" defaultValue="Everyone" />
         </Form.Group>
 
         <Row className="mb-4">
@@ -105,8 +102,12 @@ export default function AssignmentEditor() {
         </Row>
 
         <div className="d-flex justify-content-end gap-2">
-          <Button variant="secondary">Cancel</Button>
-          <Button variant="danger">Save</Button>
+          <Link href={`/Courses/${cid}/Assignments`}>
+            <Button variant="secondary">Cancel</Button>
+          </Link>
+          <Link href={`/Courses/${cid}/Assignments`}>
+            <Button variant="danger">Save</Button>
+          </Link>
         </div>
       </Form>
     </div>
