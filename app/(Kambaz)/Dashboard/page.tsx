@@ -29,7 +29,9 @@ import { setCurrentUser } from "../Account/reducer";
 export default function Dashboard() {
   const dispatch = useDispatch();
 
-  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+const { currentUser } = useSelector(
+  (state: RootState) => state.accountReducer
+) as { currentUser: { _id?: string; role?: string } | null };
   const { courses } = useSelector((state: RootState) => state.coursesReducer);
   const { enrollments } = useSelector((state: RootState) => state.enrollmentsReducer);
 
