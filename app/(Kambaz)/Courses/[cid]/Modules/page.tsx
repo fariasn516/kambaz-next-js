@@ -1,20 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { ListGroup, ListGroupItem } from "react-bootstrap";
+import { ListGroup, ListGroupItem, FormControl } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
-import * as db from "../../../Database";
 import ModulesControls from "./ModulesControls";
-import ModuleControlButtons from "./ModulesControls";
+import ModuleControlButtons from "./ModuleControlButtons";
 import LessonControlButtons from "./LessonControlButtons";
+import { addModule, editModule, updateModule, deleteModule } from "./reducer";
+import { useSelector, useDispatch } from "react-redux";
 
 export default function Modules() {
   const { cid } = useParams();
-  const modules = db.modules;
+  const dispatch = useDispatch();
+  const [moduleName, setModuleName] = useState("");
+
+  const { modules } = useSelector((state: any) => state.modulesReducer);
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
+
+  const isFacultyOrTA =
+    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
 
   return (
-    <div>
-      <ModulesControls />
+    <div className="wd-modules">
+      {isFacultyOrTA && (
+        <ModulesControls
+          moduleName={moduleName}
+          setModuleName={setModuleName}
+          addModule={() => {
+            dispatch(addModule({ name: moduleName, course: cid }));
+            setModuleName("");
+          }}
+        />
+      )}
+
       <br />
       <br />
       <br />
@@ -28,10 +47,40 @@ export default function Modules() {
               className="wd-module p-0 mb-5 fs-5 border-gray"
             >
               <div className="wd-title p-3 ps-2 bg-secondary d-flex align-items-center justify-content-between">
-                <span>
-                  <BsGripVertical className="me-2 fs-3" /> {module.name}
-                </span>
-                <ModuleControlButtons />
+                <div className="d-flex align-items-center">
+                  <BsGripVertical className="me-2 fs-3" />
+
+                  {!module.editing && <span>{module.name}</span>}
+
+                  {isFacultyOrTA && module.editing && (
+                    <FormControl
+                      className="w-50 d-inline-block"
+                      autoFocus
+                      defaultValue={module.name}
+                      onChange={(e) =>
+                        dispatch(
+                          updateModule({
+                            ...module,
+                            name: (e.target as HTMLInputElement).value,
+                          })
+                        )
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          dispatch(updateModule({ ...module, editing: false }));
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+
+                {isFacultyOrTA && (
+                  <ModuleControlButtons
+                    moduleId={module._id}
+                    deleteModule={(moduleId) => dispatch(deleteModule(moduleId))}
+                    editModule={(moduleId) => dispatch(editModule(moduleId))}
+                  />
+                )}
               </div>
 
               {module.lessons && (
@@ -44,7 +93,7 @@ export default function Modules() {
                       <span>
                         <BsGripVertical className="me-2 fs-3" /> {lesson.name}
                       </span>
-                      <LessonControlButtons />
+                      {isFacultyOrTA && <LessonControlButtons />}
                     </ListGroupItem>
                   ))}
                 </ListGroup>
