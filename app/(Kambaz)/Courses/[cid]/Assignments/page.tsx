@@ -25,10 +25,11 @@ export default function Assignments() {
   const { assignments } = useSelector(
     (state: RootState) => state.assignmentsReducer
   );
-  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+  const { currentUser } = useSelector(
+  (state: RootState) => state.accountReducer
+) as { currentUser: { role?: string } | null };
 
-  const isFacultyOrTA =
-    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+const isFacultyOrTA = currentUser?.role === "FACULTY" || currentUser?.role === "TA";
 
   return (
     <div className="wd-assignments">
