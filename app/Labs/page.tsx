@@ -29,6 +29,11 @@ export default function Labs() {
             Lab 4: React and TypeScript
           </Link>
         </li>
+        <li>
+          <Link href="/Labs/Lab5" id="wd-lab5-link">
+            Lab 5: RESTful Web APIs
+          </Link>
+        </li>
       </ul>
 
       <Link
