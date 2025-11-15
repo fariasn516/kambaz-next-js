@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
+import * as client from "../Courses/client";
 import {
   addNewCourse,
   deleteCourse,
   updateCourse,
+  setCourses
 } from "../Courses/reducer";
 import {
   enrollInCourse,
@@ -46,6 +48,19 @@ const { currentUser } = useSelector(
     description: "New Description",
   });
 
+  const fetchCourses = async () => {
+    try {
+      const courses = await client.findMyCourses();
+      dispatch(setCourses(courses));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  useEffect(() => {
+    fetchCourses();
+  }, [currentUser]);
+
+
   if (!currentUser) return <div>Loading user...</div>;
 
   const defaultImage = "/images/classcover.jpg";
@@ -56,6 +71,25 @@ const { currentUser } = useSelector(
     enrollments.some(
       (e: any) => e.user === currentUser._id && e.course === courseId
     );
+
+    const onAddNewCourse = async () => {
+    const newCourse = await client.createCourse(course);
+    dispatch(setCourses([ ...courses, newCourse ]));
+  };
+
+  const onDeleteCourse = async (courseId: string) => {
+    const status = await client.deleteCourse(courseId);
+    dispatch(setCourses(courses.filter((course) => course._id !== courseId)));
+  };
+
+  const onUpdateCourse = async () => {
+    await client.updateCourse(course);
+    dispatch(setCourses(courses.map((c) => {
+        if (c._id === course._id) { return course; }
+        else { return c; }
+    })));};
+
+
 
   return (
     <div id="wd-dashboard" className="wd-main-content-offset p-4">
@@ -76,16 +110,11 @@ const { currentUser } = useSelector(
         <>
           <h5 id="wd-dashboard-new-course-title">
             New Course
-            <button
-              className="btn btn-primary float-end"
-              onClick={() => dispatch(addNewCourse(course))}
-            >
-              Add
-            </button>
-            <button
-              className="btn btn-warning float-end me-2"
-              onClick={() => dispatch(updateCourse(course))}
-            >
+             <button onClick={onAddNewCourse} className="btn btn-primary float-end" id="wd-add-new-course-click" >
+         Add
+       </button>
+
+                  <button onClick={onUpdateCourse} className="btn btn-secondary float-end" id="wd-update-course-click" >
               Update
             </button>
           </h5>
@@ -153,13 +182,13 @@ const { currentUser } = useSelector(
                         >
                           Edit
                         </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => dispatch(deleteCourse(course._id))}
-                        >
-                          Delete
-                        </Button>
+                        <button className="btn btn-danger"
+            onClick={(event) => {
+              event.preventDefault();
+              onDeleteCourse(course._id);
+            }} >
+      Delete
+    </button>
                       </>
                     )}
 

@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useSelector, useDispatch } from "react-redux";
 import { ListGroup, ListGroupItem, FormControl } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
-import { useSelector, useDispatch } from "react-redux";
+import { v4 as uuidv4 } from "uuid";
+
 import {
   addAssignment,
   editAssignment,
   deleteAssignment,
   updateAssignment,
+  setAssignments,
 } from "./reducer";
 import { RootState } from "../../../store";
-import { v4 as uuidv4 } from "uuid";
-import Link from "next/link";
+
 import AssignmentControlButtons from "./AssignmentControlButtons";
 import AssignmentsControls from "./AssignmentControls";
 
@@ -22,42 +25,64 @@ export default function Assignments() {
   const dispatch = useDispatch();
   const [assignmentTitle, setAssignmentTitle] = useState("");
 
-  const { assignments } = useSelector(
-    (state: RootState) => state.assignmentsReducer
+  const assignments = useSelector(
+    (state: RootState) => state.assignmentsReducer.assignments
   );
-  const { currentUser } = useSelector(
-  (state: RootState) => state.accountReducer
-) as { currentUser: { role?: string } | null };
 
-const isFacultyOrTA = currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+  const currentUser = useSelector(
+    (state: RootState) => state.accountReducer.currentUser
+  ) as { role?: string } | null;
+
+  const isFacultyOrTA =
+    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+
+  // Example: preload assignments (in real apps, fetch from API)
+  useEffect(() => {
+    const exampleAssignments = [
+      {
+        _id: uuidv4(),
+        title: "Example Assignment 1",
+        course: cid,
+        description: "Sample desc",
+        points: 100,
+        due: new Date().toISOString().slice(0, 10),
+        availableFrom: null,
+        availableUntil: null,
+        editing: false,
+      },
+    ];
+    dispatch(setAssignments(exampleAssignments));
+  }, [cid, dispatch]);
+
+  const handleAddAssignment = () => {
+    if (!assignmentTitle.trim()) return;
+    dispatch(
+      addAssignment({
+        _id: uuidv4(),
+        title: assignmentTitle,
+        course: cid,
+        due: new Date().toISOString().slice(0, 10),
+      })
+    );
+    setAssignmentTitle("");
+  };
 
   return (
     <div className="wd-assignments">
       {isFacultyOrTA && (
-        <div className="d-flex justify-content-end align-items-center">
+        <div className="d-flex justify-content-end align-items-center mb-3">
           <AssignmentsControls
             assignmentTitle={assignmentTitle}
             setAssignmentTitle={setAssignmentTitle}
-            addAssignment={() => {
-              if (!assignmentTitle.trim()) return;
-              dispatch(
-                addAssignment({
-                  _id: uuidv4(),
-                  title: assignmentTitle,
-                  course: cid,
-                  due: new Date().toISOString().slice(0, 10),
-                })
-              );
-              setAssignmentTitle("");
-            }}
+            addAssignment={handleAddAssignment}
           />
         </div>
       )}
 
       <ListGroup id="wd-assignments" className="rounded-0">
         {assignments
-          .filter((a: any) => a.course === cid)
-          .map((assignment: any) => (
+          .filter((a) => a.course === cid)
+          .map((assignment) => (
             <ListGroupItem
               key={assignment._id}
               className="wd-assignment p-0 mb-5 fs-5 border-gray"
@@ -84,7 +109,7 @@ const isFacultyOrTA = currentUser?.role === "FACULTY" || currentUser?.role === "
                         dispatch(
                           updateAssignment({
                             ...assignment,
-                            title: (e.target as HTMLInputElement).value,
+                            title: e.target.value,
                           })
                         )
                       }
@@ -117,15 +142,14 @@ const isFacultyOrTA = currentUser?.role === "FACULTY" || currentUser?.role === "
                     <strong>Available From:</strong>{" "}
                     {assignment.availableFrom
                       ? new Date(assignment.availableFrom).toLocaleDateString()
-                      : "N/A"}
-                    {" | "}
-                    <strong>Due:</strong>{" "}
+                      : "N/A"}{" "}
+                    | <strong>Due:</strong>{" "}
                     {assignment.due
                       ? new Date(assignment.due).toLocaleString()
                       : "N/A"}
                   </span>
                   <span>
-                    <strong>{assignment.points || 100} pts</strong>
+                    <strong>{assignment.points ?? 100} pts</strong>
                   </span>
                 </ListGroupItem>
               </ListGroup>
