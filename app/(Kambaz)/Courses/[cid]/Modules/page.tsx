@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-assign-module-variable */
+
 "use client";
 
 import { useState, useEffect } from "react";
