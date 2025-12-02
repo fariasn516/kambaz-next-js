@@ -4,9 +4,12 @@ import { usePathname } from "next/navigation";
 import { Nav, NavItem, NavLink } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
+import type { User } from "./types";
 
 export default function AccountNavigation() {
-  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+  const currentUser = useSelector(
+  (state: RootState) => state.accountReducer.currentUser as User | null
+);
   const pathname = usePathname();
 
   const baseLinks = currentUser ? ["Profile"] : ["Signin", "Signup"];
