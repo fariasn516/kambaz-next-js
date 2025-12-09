@@ -10,13 +10,24 @@ export default function CourseRoutes(app, db) {
 
   const findCoursesForEnrolledUser = (req, res) => {
     let { userId } = req.params;
+    let user = null;
     if (userId === "current") {
-      const currentUser = req.session["currentUser"];
-      if (!currentUser) {
+      user = req.session["currentUser"];
+      if (!user) {
         res.sendStatus(401);
         return;
       }
-      userId = currentUser._id;
+      userId = user._id;
+    } else {
+      // Look up user by ID if not "current"
+      const { users } = db;
+      user = users.find((u) => u._id === userId);
+    }
+    // If user is ADMIN or FACULTY, return all courses
+    if (user && (user.role === "ADMIN" || user.role === "FACULTY")) {
+      const courses = dao.findAllCourses();
+      res.json(courses);
+      return;
     }
     const courses = dao.findCoursesForEnrolledUser(userId);
     res.json(courses);

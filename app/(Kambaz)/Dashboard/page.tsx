@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import * as client from "../Courses/client";
+import * as enrollmentsClient from "../Enrollments/client";
 import {
   addNewCourse,
   deleteCourse,
@@ -13,6 +14,7 @@ import {
 import {
   enrollInCourse,
   unenrollFromCourse,
+  setEnrollments,
 } from "../Enrollments/reducer";
 import {
   Row,
@@ -56,15 +58,28 @@ const { currentUser } = useSelector(
       console.error(error);
     }
   };
+
+  const fetchEnrollments = async () => {
+    try {
+      const enrollments = await enrollmentsClient.findEnrollmentsForCurrentUser();
+      dispatch(setEnrollments(enrollments));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
-    fetchCourses();
+    if (currentUser) {
+      fetchCourses();
+      fetchEnrollments();
+    }
   }, [currentUser]);
 
 
   if (!currentUser) return <div>Loading user...</div>;
 
   const defaultImage = "/images/classcover.jpg";
-  const isFaculty = currentUser.role === "FACULTY";
+  const isFaculty = currentUser.role === "FACULTY" || currentUser.role === "ADMIN";
   const isStudent = currentUser.role === "STUDENT";
 
   const isEnrolled = (courseId: string) =>
@@ -192,38 +207,46 @@ const { currentUser } = useSelector(
                       </>
                     )}
 
-                    {isStudent && showAllCourses && (
-                      isEnrolled(course._id) ? (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() =>
-                            dispatch(
-                              unenrollFromCourse({
-                                user: currentUser._id,
-                                course: course._id,
-                              })
-                            )
-                          }
-                        >
-                          Unenroll
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() =>
-                            dispatch(
-                              enrollInCourse({
-                                user: currentUser._id,
-                                course: course._id,
-                              })
-                            )
-                          }
-                        >
-                          Enroll
-                        </Button>
-                      )
+                    {isStudent && (
+                      <>
+                        {showAllCourses && !isEnrolled(course._id) && (
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const enrollment = await enrollmentsClient.enrollInCourse(course._id);
+                                dispatch(enrollInCourse(enrollment));
+                              } catch (error) {
+                                console.error("Failed to enroll:", error);
+                              }
+                            }}
+                          >
+                            Enroll
+                          </Button>
+                        )}
+                        {isEnrolled(course._id) && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await enrollmentsClient.unenrollFromCourse(course._id);
+                                dispatch(
+                                  unenrollFromCourse({
+                                    user: currentUser._id,
+                                    course: course._id,
+                                  })
+                                );
+                              } catch (error) {
+                                console.error("Failed to unenroll:", error);
+                              }
+                            }}
+                          >
+                            Unenroll
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </CardBody>
