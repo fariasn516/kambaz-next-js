@@ -15,8 +15,11 @@ export const signup = async (user: any) => {
   return response.data;
 };
 
-export const profile = async () => {
-  const response = await axiosWithCredentials.post(`${USERS_API}/profile`);
+export const profile = async (userId?: string) => {
+  const url = userId 
+    ? `${USERS_API}/profile?userId=${userId}`
+    : `${USERS_API}/profile`;
+  const response = await axiosWithCredentials.post(url);
   return response.data;
 };
 

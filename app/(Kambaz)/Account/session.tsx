@@ -10,15 +10,11 @@ export default function Session({ children }: { children: any }) {
   
   const fetchProfile = async () => {
     try {
-      const user = await client.profile();
+      const userId = currentUser?._id;
+      const user = await client.profile(userId);
       dispatch(setCurrentUser(user));
     } catch (err: any) {
-      // If profile fetch fails, user might not be logged in
-      // Keep the localStorage state if it exists, otherwise clear it
       console.error(err);
-      // Only clear if we're sure there's no valid session
-      // The localStorage state will persist, so user stays logged in
-      // until they explicitly sign out
     }
     setPending(false);
   };
@@ -28,7 +24,7 @@ export default function Session({ children }: { children: any }) {
   }, []);
   
   if (pending) {
-    return null; // or a loading spinner
+    return null; 
   }
   
   return children;

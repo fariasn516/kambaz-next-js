@@ -51,8 +51,9 @@ const { currentUser } = useSelector(
   });
 
   const fetchCourses = async () => {
+    if (!currentUser?._id) return;
     try {
-      const courses = await client.findMyCourses();
+      const courses = await client.findMyCourses(currentUser._id);
       dispatch(setCourses(courses));
     } catch (error) {
       console.error(error);
@@ -60,8 +61,9 @@ const { currentUser } = useSelector(
   };
 
   const fetchEnrollments = async () => {
+    if (!currentUser?._id) return;
     try {
-      const enrollments = await enrollmentsClient.findEnrollmentsForCurrentUser();
+      const enrollments = await enrollmentsClient.findEnrollmentsForCurrentUser(currentUser._id);
       dispatch(setEnrollments(enrollments));
     } catch (error) {
       console.error(error);
@@ -88,8 +90,21 @@ const { currentUser } = useSelector(
     );
 
     const onAddNewCourse = async () => {
-    const newCourse = await client.createCourse(course);
-    dispatch(setCourses([ ...courses, newCourse ]));
+    try {
+      await client.createCourse(course, currentUser._id);
+      await fetchCourses();
+      setCourse({
+        _id: "0",
+        name: "New Course",
+        number: "New Number",
+        startDate: "2023-09-10",
+        endDate: "2023-12-15",
+        image: "/images/classcover.jpg",
+        description: "New Description",
+      });
+    } catch (error) {
+      console.error("Failed to create course:", error);
+    }
   };
 
   const onDeleteCourse = async (courseId: string) => {
@@ -215,8 +230,9 @@ const { currentUser } = useSelector(
                             size="sm"
                             onClick={async () => {
                               try {
-                                const enrollment = await enrollmentsClient.enrollInCourse(course._id);
+                                const enrollment = await enrollmentsClient.enrollInCourse(course._id, currentUser._id!);
                                 dispatch(enrollInCourse(enrollment));
+                                await fetchEnrollments();
                               } catch (error) {
                                 console.error("Failed to enroll:", error);
                               }
@@ -231,13 +247,14 @@ const { currentUser } = useSelector(
                             size="sm"
                             onClick={async () => {
                               try {
-                                await enrollmentsClient.unenrollFromCourse(course._id);
+                                await enrollmentsClient.unenrollFromCourse(course._id, currentUser._id!);
                                 dispatch(
                                   unenrollFromCourse({
                                     user: currentUser._id,
                                     course: course._id,
                                   })
                                 );
+                                await fetchEnrollments();
                               } catch (error) {
                                 console.error("Failed to unenroll:", error);
                               }

@@ -4,24 +4,24 @@ export default function EnrollmentsRoutes(app, db) {
   const dao = EnrollmentsDao(db);
 
   const enrollUserInCourse = (req, res) => {
-    const currentUser = req.session["currentUser"];
-    if (!currentUser) {
-      res.sendStatus(401);
+    const { courseId } = req.params;
+    const userId = req.session["currentUser"]?._id || req.body?.userId;
+    if (!userId) {
+      res.status(400).json({ message: "userId is required" });
       return;
     }
-    const { courseId } = req.params;
-    const enrollment = dao.enrollUserInCourse(currentUser._id, courseId);
+    const enrollment = dao.enrollUserInCourse(userId, courseId);
     res.json(enrollment);
   };
 
   const unenrollUserFromCourse = (req, res) => {
-    const currentUser = req.session["currentUser"];
-    if (!currentUser) {
-      res.sendStatus(401);
+    const { courseId } = req.params;
+    const userId = req.session["currentUser"]?._id || req.body?.userId || req.query?.userId;
+    if (!userId) {
+      res.status(400).json({ message: "userId is required" });
       return;
     }
-    const { courseId } = req.params;
-    const success = dao.unenrollUserFromCourse(currentUser._id, courseId);
+    const success = dao.unenrollUserFromCourse(userId, courseId);
     if (success) {
       res.sendStatus(200);
     } else {
@@ -30,12 +30,12 @@ export default function EnrollmentsRoutes(app, db) {
   };
 
   const findEnrollmentsForCurrentUser = (req, res) => {
-    const currentUser = req.session["currentUser"];
-    if (!currentUser) {
-      res.sendStatus(401);
+    const userId = req.session["currentUser"]?._id || req.query?.userId;
+    if (!userId) {
+      res.status(400).json({ message: "userId is required" });
       return;
     }
-    const enrollments = dao.findEnrollmentsForUser(currentUser._id);
+    const enrollments = dao.findEnrollmentsForUser(userId);
     res.json(enrollments);
   };
 

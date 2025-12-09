@@ -13,17 +13,20 @@ export default function CourseRoutes(app, db) {
     let user = null;
     if (userId === "current") {
       user = req.session["currentUser"];
-      if (!user) {
+      if (!user && req.query?.userId) {
+        const { users } = db;
+        user = users.find((u) => u._id === req.query.userId);
+        userId = req.query.userId;
+      } else if (user) {
+        userId = user._id;
+      } else {
         res.sendStatus(401);
         return;
       }
-      userId = user._id;
     } else {
-      // Look up user by ID if not "current"
       const { users } = db;
       user = users.find((u) => u._id === userId);
     }
-    // If user is ADMIN or FACULTY, return all courses
     if (user && (user.role === "ADMIN" || user.role === "FACULTY")) {
       const courses = dao.findAllCourses();
       res.json(courses);
@@ -35,9 +38,13 @@ export default function CourseRoutes(app, db) {
 
   const enrollmentsDao = EnrollmentsDao(db);
   const createCourse = (req, res) => {
-    const currentUser = req.session["currentUser"];
+    const userId = req.session["currentUser"]?._id || req.body.userId;
+    if (!userId) {
+      res.status(400).json({ message: "userId is required" });
+      return;
+    }
     const newCourse = dao.createCourse(req.body);
-    enrollmentsDao.enrollUserInCourse(currentUser._id, newCourse._id);
+    enrollmentsDao.enrollUserInCourse(userId, newCourse._id);
     res.json(newCourse);
   };
 

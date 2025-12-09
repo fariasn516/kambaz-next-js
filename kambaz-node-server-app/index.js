@@ -12,26 +12,31 @@ import session from "express-session";
 const app = express();
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || "kambaz",
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
+  cookie: {
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  }
 };
+
 if (process.env.SERVER_ENV !== "development") {
   sessionOptions.proxy = true;
-  sessionOptions.cookie = {
-    sameSite: "none",
-    secure: true,
-    domain: process.env.SERVER_URL,
-  };
+  sessionOptions.cookie.sameSite = "none";
+  sessionOptions.cookie.secure = true;
+} else {
+  sessionOptions.cookie.sameSite = "lax";
+  sessionOptions.cookie.secure = false;
 }
 
-app.use(session(sessionOptions));
-app.use(express.json());
 app.use(
- cors({
+  cors({
     origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true
   })
 );
+app.use(express.json());
+app.use(session(sessionOptions));
 Lab5(app);
 Hello(app)
 UserRoutes(app, db);
