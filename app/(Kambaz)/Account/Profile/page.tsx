@@ -40,24 +40,29 @@ export default function Profile() {
           <FormControl
             id="wd-username"
             className="mb-2"
+            placeholder="Username"
             value={profile.username || ""}
             onChange={(e) => setProfile({ ...profile, username: e.target.value })}
           />
           <FormControl
             id="wd-password"
+            type="password"
             className="mb-2"
+            placeholder="Password"
             value={profile.password || ""}
             onChange={(e) => setProfile({ ...profile, password: e.target.value })}
           />
           <FormControl
             id="wd-firstname"
             className="mb-2"
+            placeholder="First Name"
             value={profile.firstName || ""}
             onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
           />
           <FormControl
             id="wd-lastname"
             className="mb-2"
+            placeholder="Last Name"
             value={profile.lastName || ""}
             onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
           />
@@ -65,12 +70,15 @@ export default function Profile() {
             id="wd-dob"
             type="date"
             className="mb-2"
+            placeholder="Date of Birth"
             value={profile.dob || ""}
             onChange={(e) => setProfile({ ...profile, dob: e.target.value })}
           />
           <FormControl
             id="wd-email"
+            type="email"
             className="mb-2"
+            placeholder="Email"
             value={profile.email || ""}
             onChange={(e) => setProfile({ ...profile, email: e.target.value })}
           />

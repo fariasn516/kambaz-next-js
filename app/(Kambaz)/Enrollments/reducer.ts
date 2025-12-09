@@ -10,12 +10,12 @@ const enrollmentsSlice = createSlice({
   name: "enrollments",
   initialState,
   reducers: {
-    enrollInCourse: (state, { payload: { userId, courseId } }) => {
+    enrollInCourse: (state, { payload: enrollment }) => {
       const alreadyEnrolled = state.enrollments.some(
-        (e: any) => e.user === userId && e.course === courseId
+        (e: any) => e.user === enrollment.user && e.course === enrollment.course
       );
       if (!alreadyEnrolled) {
-        state.enrollments.push({ _id: uuidv4(), user: userId, course: courseId });
+        state.enrollments.push(enrollment);
       }
     },
     unenrollFromCourse: (state, { payload: { userId, courseId } }) => {
@@ -23,8 +23,11 @@ const enrollmentsSlice = createSlice({
         (e: any) => !(e.user === userId && e.course === courseId)
       );
     },
+    setEnrollments: (state, { payload: enrollments }) => {
+      state.enrollments = enrollments;
+    },
   },
 });
 
-export const { enrollInCourse, unenrollFromCourse } = enrollmentsSlice.actions;
+export const { enrollInCourse, unenrollFromCourse, setEnrollments } = enrollmentsSlice.actions;
 export default enrollmentsSlice.reducer;
