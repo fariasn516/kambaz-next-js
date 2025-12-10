@@ -16,40 +16,43 @@ import { useSelector, useDispatch } from "react-redux";
 export default function Modules() {
   const { cid } = useParams();
   const dispatch = useDispatch();
-   const onCreateModuleForCourse = async () => {
-    if (!cid) return;
-    const newModule = { name: moduleName, course: cid as string };
-    const module = await client.createModuleForCourse(cid as string, newModule);
-    dispatch(setModules([...modules, module]));
-  };
-  const onRemoveModule = async (moduleId: string) => {
-    await client.deleteModule(moduleId);
-    dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
-  };
-
-   const onUpdateModule = async (module: any) => {
-    await client.updateModule(module);
-    const newModules = modules.map((m: any) => m._id === module._id ? module : m );
-    dispatch(setModules(newModules));
-  };
-
-
-
-  const fetchModules = async () => {
-    const modules = await client.findModulesForCourse(cid as string);
-    dispatch(setModules(modules));
-  };
-  useEffect(() => {
-    fetchModules();
-  }, []);
-
   const [moduleName, setModuleName] = useState("");
 
   const { modules } = useSelector((state: any) => state.modulesReducer);
   const { currentUser } = useSelector((state: any) => state.accountReducer);
 
+  useEffect(() => {
+    const fetchModules = async () => {
+      if (!cid) return;
+      const modules = await client.findModulesForCourse(cid as string);
+      dispatch(setModules(modules));
+    };
+    fetchModules();
+  }, [cid, dispatch]);
+
+  const onCreateModuleForCourse = async () => {
+    if (!cid || !moduleName.trim()) return;
+    const newModule = { name: moduleName, course: cid as string };
+    const module = await client.createModuleForCourse(cid as string, newModule);
+    dispatch(setModules([...modules, module]));
+    setModuleName("");
+  };
+
+  const onRemoveModule = async (moduleId: string) => {
+    await client.deleteModule(moduleId);
+    dispatch(deleteModule(moduleId));
+  };
+
+  const onUpdateModule = async (module: any) => {
+    const updatedModule = { ...module, editing: false };
+    await client.updateModule(updatedModule);
+    dispatch(updateModule(updatedModule));
+  };
+
   const isFacultyOrTA =
-    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+    currentUser?.role === "FACULTY" || 
+    currentUser?.role === "TA" || 
+    currentUser?.role === "ADMIN";
 
   return (
     <div className="wd-modules">
@@ -82,7 +85,7 @@ export default function Modules() {
                     <FormControl
                       className="w-50 d-inline-block"
                       autoFocus
-                      defaultValue={module.name}
+                      value={module.name}
                       onChange={(e) =>
                         dispatch(
                           updateModule({
@@ -93,7 +96,10 @@ export default function Modules() {
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                           onUpdateModule({ ...module, editing: false });
+                          onUpdateModule(module);
+                        }
+                        if (e.key === "Escape") {
+                          dispatch(updateModule({ ...module, editing: false }));
                         }
                       }}
                     />

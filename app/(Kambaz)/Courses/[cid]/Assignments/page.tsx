@@ -34,9 +34,10 @@ export default function Assignments() {
   ) as { role?: string } | null;
 
   const isFacultyOrTA =
-    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+    currentUser?.role === "FACULTY" || 
+    currentUser?.role === "TA" || 
+    currentUser?.role === "ADMIN";
 
-  // Example: preload assignments (in real apps, fetch from API)
   useEffect(() => {
     const exampleAssignments = [
       {
