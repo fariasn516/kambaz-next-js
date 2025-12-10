@@ -197,7 +197,7 @@ const { currentUser } = useSelector(
                   </CardText>
 
                   <div className="d-flex justify-content-center gap-2">
-                    {isEnrolled(course._id) && (
+                    {(isEnrolled(course._id) || isFaculty) && (
                       <Link href={`/Courses/${course._id}/Home`}>
                         <Button variant="primary" size="sm">Go</Button>
                       </Link>
