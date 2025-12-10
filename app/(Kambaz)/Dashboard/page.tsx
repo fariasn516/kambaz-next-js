@@ -53,8 +53,15 @@ const { currentUser } = useSelector(
   const fetchCourses = async () => {
     if (!currentUser?._id) return;
     try {
-      const courses = await client.findMyCourses(currentUser._id);
-      dispatch(setCourses(courses));
+      if (showAllCourses && isStudent) {
+        // Fetch all courses when "Show All Courses" is clicked
+        const courses = await client.fetchAllCourses();
+        dispatch(setCourses(courses));
+      } else {
+        // Fetch enrolled courses (or all for faculty)
+        const courses = await client.findMyCourses(currentUser._id);
+        dispatch(setCourses(courses));
+      }
     } catch (error) {
       console.error(error);
     }
@@ -75,7 +82,7 @@ const { currentUser } = useSelector(
       fetchCourses();
       fetchEnrollments();
     }
-  }, [currentUser]);
+  }, [currentUser, showAllCourses]);
 
 
   if (!currentUser) return <div>Loading user...</div>;
@@ -85,7 +92,7 @@ const { currentUser } = useSelector(
   const isStudent = currentUser.role === "STUDENT";
 
   const isEnrolled = (courseId: string) =>
-    enrollments.some(
+    Array.isArray(enrollments) && enrollments.some(
       (e: any) => e.user === currentUser._id && e.course === courseId
     );
 
@@ -128,7 +135,10 @@ const { currentUser } = useSelector(
         {isStudent && (
           <button
             className="btn btn-primary"
-            onClick={() => setShowAllCourses(!showAllCourses)}
+            onClick={async () => {
+              setShowAllCourses(!showAllCourses);
+              // Fetch courses will happen in useEffect when showAllCourses changes
+            }}
           >
             {showAllCourses ? "Show My Courses" : "Show All Courses"}
           </button>
@@ -197,7 +207,7 @@ const { currentUser } = useSelector(
                   </CardText>
 
                   <div className="d-flex justify-content-center gap-2">
-                    {isEnrolled(course._id) && (
+                    {(isEnrolled(course._id) || isFaculty) && (
                       <Link href={`/Courses/${course._id}/Home`}>
                         <Button variant="primary" size="sm">Go</Button>
                       </Link>
@@ -222,9 +232,9 @@ const { currentUser } = useSelector(
                       </>
                     )}
 
-                    {isStudent && (
+                    {isStudent && showAllCourses && (
                       <>
-                        {showAllCourses && !isEnrolled(course._id) && (
+                        {!isEnrolled(course._id) && (
                           <Button
                             variant="success"
                             size="sm"
@@ -233,6 +243,10 @@ const { currentUser } = useSelector(
                                 const enrollment = await enrollmentsClient.enrollInCourse(course._id, currentUser._id!);
                                 dispatch(enrollInCourse(enrollment));
                                 await fetchEnrollments();
+                                // If in "My Courses" view, refresh courses to show newly enrolled course
+                                if (!showAllCourses) {
+                                  await fetchCourses();
+                                }
                               } catch (error) {
                                 console.error("Failed to enroll:", error);
                               }
@@ -250,11 +264,15 @@ const { currentUser } = useSelector(
                                 await enrollmentsClient.unenrollFromCourse(course._id, currentUser._id!);
                                 dispatch(
                                   unenrollFromCourse({
-                                    user: currentUser._id,
-                                    course: course._id,
+                                    userId: currentUser._id,
+                                    courseId: course._id,
                                   })
                                 );
                                 await fetchEnrollments();
+                                // If in "My Courses" view, refresh courses to hide unenrolled course
+                                if (!showAllCourses) {
+                                  await fetchCourses();
+                                }
                               } catch (error) {
                                 console.error("Failed to unenroll:", error);
                               }

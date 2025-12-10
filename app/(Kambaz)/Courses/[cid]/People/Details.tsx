@@ -10,6 +10,7 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
      const deleteUser = async (uid: string) => {
     await client.deleteUser(uid);
     onClose();
+    // Refresh will be handled by onClose calling fetchUsers
   };
   const [user, setUser] = useState<any>({});
   const fetchUser = async () => {
@@ -20,15 +21,27 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
   const [name, setName] = useState("");
   const [editing, setEditing] = useState(false);
   const saveUser = async () => {
-    const [firstName, lastName] = name.split(" ");
+    if (!name.trim()) {
+      setEditing(false);
+      return;
+    }
+    const nameParts = name.trim().split(" ");
+    const firstName = nameParts[0] || user.firstName;
+    const lastName = nameParts.slice(1).join(" ") || (nameParts.length === 1 ? "" : user.lastName);
     const updatedUser = { ...user, firstName, lastName };
-    await client.updateUser(updatedUser);
+    // Update UI immediately
     setUser(updatedUser);
     setEditing(false);
+    // Then save to database
+    await client.updateUser(updatedUser);
     onClose();
   };
   useEffect(() => {
-    if (uid) fetchUser();
+    if (uid) {
+      fetchUser();
+      setEditing(false);
+      setName("");
+    }
   }, [uid]);
   if (!uid) return null;
   return (
@@ -38,7 +51,10 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
       <div className="text-center mt-2"> <FaUserCircle className="text-secondary me-2 fs-1" /> </div><hr />
       <div className="text-danger fs-4 wd-name"> <div className="text-danger fs-4">
         {!editing && (
-          <FaPencil onClick={() => setEditing(true)}
+          <FaPencil onClick={() => {
+            setEditing(true);
+            setName(`${user.firstName} ${user.lastName}`);
+          }}
               className="float-end fs-5 mt-2 wd-edit" /> )}
         {editing && (
           <FaCheck onClick={() => saveUser()}
@@ -49,10 +65,13 @@ export default function PeopleDetails({ uid, onClose }: { uid: string | null; on
             {user.firstName} {user.lastName}</div>)}
         {user && editing && (
           <FormControl className="w-50 wd-edit-name"
-            defaultValue={`${user.firstName} ${user.lastName}`}
+            value={name || `${user.firstName} ${user.lastName}`}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { saveUser(); }}}/>)}
+              if (e.key === "Enter") { saveUser(); }
+              if (e.key === "Escape") { setEditing(false); setName(""); }
+            }}
+            autoFocus/>)}
       </div>
  </div>
       <b>Roles:</b>           <span className="wd-roles">         {user.role}         </span> <br />

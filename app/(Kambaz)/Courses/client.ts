@@ -32,6 +32,7 @@ export const updateModule = async (courseId: string, module: any) => {
    `${COURSES_API}/${courseId}/modules/${module._id}`,
    module
  );
+ return data;
 };
 
 export const deleteModule = async (courseId: string, moduleId: string) => {

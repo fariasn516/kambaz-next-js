@@ -18,9 +18,14 @@ export default function Modules() {
   const dispatch = useDispatch();
    const onCreateModuleForCourse = async () => {
     if (!cid) return;
-    const newModule = { name: moduleName, course: cid as string };
-    const module = await client.createModuleForCourse(cid as string, newModule);
-    dispatch(setModules([...modules, module]));
+    try {
+      const newModule = { name: moduleName, course: cid as string };
+      const module = await client.createModuleForCourse(cid as string, newModule);
+      dispatch(setModules([...modules, module]));
+      setModuleName("");
+    } catch (error) {
+      console.error("Error creating module:", error);
+    }
   };
   const onRemoveModule = async (moduleId: string) => {
     if (typeof cid === "string") {
@@ -31,21 +36,40 @@ export default function Modules() {
 
    const onUpdateModule = async (module: any) => {
     if (typeof cid === "string") {
-            await client.updateModule(cid, module);
-        }
-    const newModules = modules.map((m: any) => m._id === module._id ? module : m );
-    dispatch(setModules(newModules));
+      try {
+        const updatedModule = await client.updateModule(cid, module);
+        const newModules = modules.map((m: any) => 
+          m._id === module._id ? (updatedModule || module) : m
+        );
+        dispatch(setModules(newModules));
+      } catch (error) {
+        console.error("Error updating module:", error);
+        // Still update UI optimistically
+        const newModules = modules.map((m: any) => m._id === module._id ? module : m);
+        dispatch(setModules(newModules));
+      }
+    } else {
+      // Update UI immediately even if cid is not available
+      const newModules = modules.map((m: any) => m._id === module._id ? module : m);
+      dispatch(setModules(newModules));
+    }
   };
 
 
 
   const fetchModules = async () => {
-    const modules = await client.findModulesForCourse(cid as string);
-    dispatch(setModules(modules));
+    if (!cid) return;
+    try {
+      const modules = await client.findModulesForCourse(cid as string);
+      dispatch(setModules(Array.isArray(modules) ? modules : []));
+    } catch (error) {
+      console.error("Error fetching modules:", error);
+      dispatch(setModules([]));
+    }
   };
   useEffect(() => {
     fetchModules();
-  }, []);
+  }, [cid]);
 
   const [moduleName, setModuleName] = useState("");
 
@@ -53,7 +77,7 @@ export default function Modules() {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
 
   const isFacultyOrTA =
-    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+    currentUser?.role === "FACULTY" || currentUser?.role === "TA" || currentUser?.role === "ADMIN";
 
   return (
     <div className="wd-modules">
@@ -86,7 +110,7 @@ export default function Modules() {
                     <FormControl
                       className="w-50 d-inline-block"
                       autoFocus
-                      defaultValue={module.name}
+                      value={module.name || ""}
                       onChange={(e) =>
                         dispatch(
                           updateModule({
@@ -98,6 +122,9 @@ export default function Modules() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                            onUpdateModule({ ...module, editing: false });
+                        }
+                        if (e.key === "Escape") {
+                          dispatch(updateModule({ ...module, editing: false }));
                         }
                       }}
                     />

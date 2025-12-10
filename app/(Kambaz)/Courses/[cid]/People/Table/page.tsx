@@ -4,11 +4,37 @@ import { Table } from "react-bootstrap";
 import { FaUserCircle } from "react-icons/fa";
 import PeopleDetails from "../Details";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import * as enrollmentsClient from "../../../../Enrollments/client";
 
-export default function PeopleTable({ users = [], fetchUsers }: { users?: any[]; fetchUsers: () => void; }) {
+export default function PeopleTable({ users: propUsers, fetchUsers: propFetchUsers }: { users?: any[]; fetchUsers?: () => void; }) {
+  const { cid } = useParams();
+  const [users, setUsers] = useState<any[]>(propUsers || []);
   const [showDetails, setShowDetails] = useState(false);
   const [showUserId, setShowUserId] = useState<string | null>(null);
+
+  const fetchUsers = async () => {
+    if (cid && typeof cid === "string") {
+      try {
+        const enrolledUsers = await enrollmentsClient.findUsersForCourse(cid);
+        setUsers(Array.isArray(enrolledUsers) ? enrolledUsers : []);
+      } catch (error) {
+        console.error("Error fetching users for course:", error);
+        setUsers([]);
+      }
+    } else if (propFetchUsers) {
+      propFetchUsers();
+    }
+  };
+
+  useEffect(() => {
+    if (cid && !propUsers) {
+      fetchUsers();
+    } else if (propUsers) {
+      setUsers(propUsers);
+    }
+  }, [cid, propUsers]);
   return (
     <div id="wd-people-table">
       {showDetails && (
@@ -16,7 +42,11 @@ export default function PeopleTable({ users = [], fetchUsers }: { users?: any[];
          uid={showUserId}
          onClose={() => {
            setShowDetails(false);
-           fetchUsers();
+           if (cid) {
+             fetchUsers();
+           } else if (propFetchUsers) {
+             propFetchUsers();
+           }
          }}/>
      )}
       <Table striped>

@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
 import { ListGroup, ListGroupItem, FormControl } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
-import { v4 as uuidv4 } from "uuid";
 
 import {
   addAssignment,
@@ -16,6 +15,7 @@ import {
   setAssignments,
 } from "./reducer";
 import { RootState } from "../../../store";
+import * as client from "../../client";
 
 import AssignmentControlButtons from "./AssignmentControlButtons";
 import AssignmentsControls from "./AssignmentControls";
@@ -34,37 +34,58 @@ export default function Assignments() {
   ) as { role?: string } | null;
 
   const isFacultyOrTA =
-    currentUser?.role === "FACULTY" || currentUser?.role === "TA";
+    currentUser?.role === "FACULTY" || currentUser?.role === "TA" || currentUser?.role === "ADMIN";
 
-  // Example: preload assignments (in real apps, fetch from API)
   useEffect(() => {
-    const exampleAssignments = [
-      {
-        _id: uuidv4(),
-        title: "Example Assignment 1",
-        course: cid,
-        description: "Sample desc",
-        points: 100,
-        due: new Date().toISOString().slice(0, 10),
-        availableFrom: null,
-        availableUntil: null,
-        editing: false,
-      },
-    ];
-    dispatch(setAssignments(exampleAssignments));
+    const fetchAssignments = async () => {
+      if (!cid) return;
+      try {
+        const assignments = await client.findAssignmentsForCourse(cid as string);
+        dispatch(setAssignments(Array.isArray(assignments) ? assignments : []));
+      } catch (error) {
+        console.error("Error fetching assignments:", error);
+        dispatch(setAssignments([]));
+      }
+    };
+    fetchAssignments();
   }, [cid, dispatch]);
 
-  const handleAddAssignment = () => {
-    if (!assignmentTitle.trim()) return;
-    dispatch(
-      addAssignment({
-        _id: uuidv4(),
+  const handleAddAssignment = async () => {
+    if (!assignmentTitle.trim() || !cid) return;
+    try {
+      const newAssignment = {
         title: assignmentTitle,
-        course: cid,
+        course: cid as string,
         due: new Date().toISOString().slice(0, 10),
-      })
-    );
-    setAssignmentTitle("");
+        points: 100,
+        description: "",
+      };
+      const assignment = await client.createAssignmentForCourse(cid as string, newAssignment);
+      dispatch(addAssignment(assignment));
+      setAssignmentTitle("");
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    try {
+      await client.deleteAssignment(assignmentId);
+      dispatch(deleteAssignment(assignmentId));
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+    }
+  };
+
+  const handleUpdateAssignment = async (assignment: any) => {
+    try {
+      const updatedAssignment = await client.updateAssignment(assignment);
+      dispatch(updateAssignment(updatedAssignment || assignment));
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      // Still update UI optimistically
+      dispatch(updateAssignment(assignment));
+    }
   };
 
   return (
@@ -80,9 +101,7 @@ export default function Assignments() {
       )}
 
       <ListGroup id="wd-assignments" className="rounded-0">
-        {assignments
-          .filter((a) => a.course === cid)
-          .map((assignment) => (
+        {assignments.map((assignment) => (
             <ListGroupItem
               key={assignment._id}
               className="wd-assignment p-0 mb-5 fs-5 border-gray"
@@ -104,23 +123,21 @@ export default function Assignments() {
                     <FormControl
                       className="w-50 d-inline-block"
                       autoFocus
-                      defaultValue={assignment.title}
+                      value={assignment.title || ""}
                       onChange={(e) =>
                         dispatch(
                           updateAssignment({
                             ...assignment,
-                            title: e.target.value,
+                            title: (e.target as HTMLInputElement).value,
                           })
                         )
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                          dispatch(
-                            updateAssignment({
-                              ...assignment,
-                              editing: false,
-                            })
-                          );
+                          handleUpdateAssignment({ ...assignment, editing: false });
+                        }
+                        if (e.key === "Escape") {
+                          dispatch(updateAssignment({ ...assignment, editing: false }));
                         }
                       }}
                     />
@@ -131,7 +148,7 @@ export default function Assignments() {
                   <AssignmentControlButtons
                     assignmentId={assignment._id}
                     editAssignment={(id) => dispatch(editAssignment(id))}
-                    deleteAssignment={(id) => dispatch(deleteAssignment(id))}
+                    deleteAssignment={handleDeleteAssignment}
                   />
                 )}
               </div>
